@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mysterious Stars</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/ui.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Top Resource Bar -->
+        <div id="top-bar">
+            <div class="resource-display">
+                <span class="resource energy">
+                    <span class="icon">⚡</span>
+                    <span id="energy-amount">0</span>
+                    <span id="energy-income" class="income">(+0)</span>
+                </span>
+                <span class="resource minerals">
+                    <span class="icon">⛏️</span>
+                    <span id="minerals-amount">0</span>
+                    <span id="minerals-income" class="income">(+0)</span>
+                </span>
+                <span class="resource research">
+                    <span class="icon">🔬</span>
+                    <span id="research-amount">0</span>
+                    <span id="research-income" class="income">(+0)</span>
+                </span>
+            </div>
+            <div class="turn-display">
+                <span>Turn: <span id="turn-number">1</span></span>
+                <button id="end-turn-btn" class="btn-primary">End Turn</button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="main-content">
+            <!-- Left Sidebar -->
+            <div id="left-sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" data-tab="empire">Empire</button>
+                    <button class="tab-btn" data-tab="tech">Tech</button>
+                    <button class="tab-btn" data-tab="fleets">Fleets</button>
+                    <button class="tab-btn" data-tab="diplomacy">Diplomacy</button>
+                    <button class="tab-btn" data-tab="codex">Codex</button>
+                </div>
+                <div id="sidebar-content">
+                    <!-- Dynamic content based on selected tab -->
+                </div>
+            </div>
+
+            <!-- Map Canvas -->
+            <div id="map-container">
+                <canvas id="game-canvas"></canvas>
+                <div id="map-controls">
+                    <button id="zoom-in">+</button>
+                    <button id="zoom-out">-</button>
+                </div>
+            </div>
+
+            <!-- Right Panel (Context-sensitive) -->
+            <div id="right-panel" class="hidden">
+                <div id="panel-header">
+                    <h2 id="panel-title">Details</h2>
+                    <button id="close-panel">×</button>
+                </div>
+                <div id="panel-content">
+                    <!-- Dynamic content based on selection -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar -->
+        <div id="bottom-bar">
+            <div id="action-buttons">
+                <!-- Context-sensitive actions -->
+            </div>
+            <div id="notification-log">
+                <div id="notifications-list"></div>
+            </div>
+        </div>
+
+        <!-- Modal Overlays -->
+        <div id="modal-overlay" class="hidden">
+            <div id="modal-content">
+                <!-- Dynamic modal content -->
+            </div>
+        </div>
+
+        <!-- System Detail View -->
+        <div id="system-view" class="hidden">
+            <div class="system-view-header">
+                <h2 id="system-name">System Name</h2>
+                <button id="close-system-view">×</button>
+            </div>
+            <div id="system-view-content">
+                <!-- System details rendered here -->
+            </div>
+        </div>
+
+        <!-- Colony View -->
+        <div id="colony-view" class="hidden">
+            <div class="colony-view-header">
+                <h2 id="colony-name">Colony Name</h2>
+                <button id="close-colony-view">×</button>
+            </div>
+            <div id="colony-view-content">
+                <!-- Colony management rendered here -->
+            </div>
+        </div>
+
+        <!-- Archaeology Excavation View -->
+        <div id="archaeology-view" class="hidden">
+            <div class="archaeology-header">
+                <h2 id="site-name">Archaeological Site</h2>
+                <button id="close-archaeology-view">×</button>
+            </div>
+            <div id="archaeology-content">
+                <!-- Excavation narrative and choices -->
+            </div>
+        </div>
+
+        <!-- Combat Results Modal -->
+        <div id="combat-modal" class="hidden">
+            <div class="combat-header">
+                <h2>Combat Report</h2>
+            </div>
+            <div id="combat-content">
+                <!-- Combat results -->
+            </div>
+            <button id="close-combat" class="btn-primary">Continue</button>
+        </div>
+
+        <!-- Main Menu -->
+        <div id="main-menu">
+            <div class="menu-content">
+                <h1>Mysterious Stars</h1>
+                <p class="tagline">Discover the secrets of dead civilizations</p>
+                <div class="menu-buttons">
+                    <button id="new-game-btn" class="menu-btn">New Game</button>
+                    <button id="load-game-btn" class="menu-btn">Load Game</button>
+                    <button id="settings-btn" class="menu-btn">Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

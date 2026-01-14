@@ -1,0 +1,807 @@
+/* Mysterious Stars - UI Component Styles */
+
+/* System View */
+#system-view, #colony-view, #archaeology-view, #combat-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 80%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    z-index: 1500;
+    box-shadow: 0 0 50px rgba(0, 212, 170, 0.15);
+}
+
+.system-view-header, .colony-view-header, .archaeology-header, .combat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    background: linear-gradient(to bottom, var(--bg-darker), var(--bg-panel));
+    border-bottom: 1px solid var(--border-color);
+}
+
+.system-view-header h2, .colony-view-header h2, .archaeology-header h2, .combat-header h2 {
+    color: var(--accent-teal);
+    font-size: 20px;
+}
+
+#close-system-view, #close-colony-view, #close-archaeology-view {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+#close-system-view:hover, #close-colony-view:hover, #close-archaeology-view:hover {
+    color: var(--accent-red);
+}
+
+#system-view-content, #colony-view-content {
+    padding: var(--spacing-md);
+    overflow-y: auto;
+    max-height: calc(85vh - 60px);
+}
+
+/* System View - Orbital Display */
+.orbital-display {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.star-info {
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--bg-darker);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.star-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: var(--spacing-sm);
+}
+
+.star-type-yellow .star-icon { color: #f1c40f; text-shadow: 0 0 20px #f1c40f; }
+.star-type-red .star-icon { color: #e74c3c; text-shadow: 0 0 20px #e74c3c; }
+.star-type-blue .star-icon { color: #3498db; text-shadow: 0 0 20px #3498db; }
+.star-type-white .star-icon { color: #ecf0f1; text-shadow: 0 0 20px #ecf0f1; }
+.star-type-orange .star-icon { color: #e67e22; text-shadow: 0 0 20px #e67e22; }
+
+.planets-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+}
+
+.planet-card {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.planet-card:hover {
+    border-color: var(--accent-blue);
+    background: var(--bg-hover);
+}
+
+.planet-card.colonized {
+    border-color: var(--accent-teal);
+}
+
+.planet-card.has-site {
+    border-color: var(--accent-purple);
+}
+
+.planet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.planet-name {
+    font-weight: bold;
+    color: var(--accent-cyan);
+}
+
+.planet-type {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--bg-darker);
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.planet-icon {
+    font-size: 32px;
+    text-align: center;
+    margin: var(--spacing-sm) 0;
+}
+
+.planet-resources {
+    display: flex;
+    gap: var(--spacing-sm);
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+
+.planet-resources span {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.planet-features {
+    margin-top: var(--spacing-sm);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.archaeology-indicator {
+    color: var(--accent-purple);
+    font-weight: bold;
+}
+
+/* Colony View */
+.colony-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+}
+
+.colony-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.colony-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.stat-box {
+    background: var(--bg-darker);
+    padding: var(--spacing-sm);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 18px;
+    color: var(--accent-teal);
+}
+
+.districts-section, .buildings-section {
+    background: var(--bg-darker);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.section-title {
+    font-size: 14px;
+    color: var(--accent-cyan);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.districts-grid, .buildings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+
+.district-slot, .building-slot {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.district-slot:hover, .building-slot:hover {
+    border-color: var(--accent-blue);
+}
+
+.district-slot.empty, .building-slot.empty {
+    border-style: dashed;
+    color: var(--text-muted);
+    justify-content: center;
+}
+
+.district-icon, .building-icon {
+    font-size: 20px;
+}
+
+.district-info, .building-info {
+    flex: 1;
+}
+
+.district-name, .building-name {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.district-output, .building-effect {
+    font-size: 10px;
+    color: var(--text-secondary);
+}
+
+/* Archaeology View */
+#archaeology-content {
+    padding: var(--spacing-lg);
+    max-height: calc(85vh - 60px);
+    overflow-y: auto;
+}
+
+.excavation-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--bg-darker);
+    border-radius: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg-panel-light);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent-purple), var(--accent-blue));
+    transition: width 0.3s ease;
+}
+
+.layer-indicator {
+    color: var(--accent-purple);
+    font-weight: bold;
+}
+
+.narrative-text {
+    background: var(--bg-darker);
+    padding: var(--spacing-lg);
+    border-radius: 8px;
+    border-left: 3px solid var(--accent-purple);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.narrative-text p {
+    margin-bottom: var(--spacing-md);
+}
+
+.narrative-text p:last-child {
+    margin-bottom: 0;
+}
+
+.choice-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.choice-btn {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.choice-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-purple);
+    box-shadow: 0 0 10px rgba(155, 89, 182, 0.2);
+}
+
+.choice-title {
+    font-weight: bold;
+    color: var(--accent-cyan);
+    margin-bottom: var(--spacing-xs);
+}
+
+.choice-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.excavation-complete {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.reward-display {
+    margin: var(--spacing-lg) 0;
+    padding: var(--spacing-md);
+    background: var(--bg-darker);
+    border-radius: 8px;
+    border: 1px solid var(--accent-gold);
+}
+
+.reward-title {
+    color: var(--accent-gold);
+    font-weight: bold;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Combat Modal */
+#combat-content {
+    padding: var(--spacing-lg);
+}
+
+.combat-sides {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.combat-side {
+    background: var(--bg-darker);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.combat-side.player {
+    border: 1px solid var(--accent-teal);
+}
+
+.combat-side.enemy {
+    border: 1px solid var(--accent-red);
+}
+
+.combat-vs {
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+    color: var(--text-muted);
+}
+
+.fleet-strength {
+    font-size: 24px;
+    color: var(--accent-cyan);
+    margin: var(--spacing-sm) 0;
+}
+
+.losses-display {
+    color: var(--accent-red);
+    font-size: 14px;
+}
+
+.combat-result {
+    text-align: center;
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.combat-result.victory {
+    background: rgba(0, 212, 170, 0.1);
+    color: var(--accent-teal);
+    border: 1px solid var(--accent-teal);
+}
+
+.combat-result.defeat {
+    background: rgba(231, 76, 60, 0.1);
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+}
+
+#close-combat {
+    display: block;
+    margin: var(--spacing-md) auto 0;
+}
+
+/* Tech Tree Panel */
+.tech-category {
+    margin-bottom: var(--spacing-md);
+}
+
+.tech-category-title {
+    font-size: 14px;
+    color: var(--accent-cyan);
+    padding: var(--spacing-sm);
+    background: var(--bg-darker);
+    border-radius: 4px;
+    margin-bottom: var(--spacing-sm);
+}
+
+.tech-item {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-xs);
+    cursor: pointer;
+}
+
+.tech-item:hover {
+    border-color: var(--accent-blue);
+}
+
+.tech-item.researching {
+    border-color: var(--accent-teal);
+    background: rgba(0, 212, 170, 0.1);
+}
+
+.tech-item.completed {
+    border-color: var(--accent-gold);
+    background: rgba(241, 196, 15, 0.1);
+}
+
+.tech-item.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tech-name {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.tech-progress {
+    height: 4px;
+    background: var(--bg-darker);
+    border-radius: 2px;
+    margin-top: var(--spacing-xs);
+    overflow: hidden;
+}
+
+.tech-progress-fill {
+    height: 100%;
+    background: var(--accent-teal);
+}
+
+/* Fleet List Panel */
+.fleet-item {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.fleet-item:hover {
+    border-color: var(--accent-blue);
+}
+
+.fleet-item.selected {
+    border-color: var(--accent-teal);
+}
+
+.fleet-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-xs);
+}
+
+.fleet-name {
+    font-weight: bold;
+    color: var(--accent-cyan);
+}
+
+.fleet-location {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.fleet-composition {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Diplomacy Panel */
+.diplomacy-opponent {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.opponent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.opponent-name {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--accent-cyan);
+}
+
+.opponent-stance {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.stance-friendly { background: rgba(0, 212, 170, 0.2); color: var(--accent-teal); }
+.stance-neutral { background: rgba(52, 152, 219, 0.2); color: var(--accent-blue); }
+.stance-suspicious { background: rgba(230, 126, 34, 0.2); color: var(--accent-orange); }
+.stance-hostile { background: rgba(231, 76, 60, 0.2); color: var(--accent-red); }
+.stance-war { background: var(--accent-red); color: white; }
+
+.trust-meter {
+    margin: var(--spacing-sm) 0;
+}
+
+.trust-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+}
+
+.trust-bar {
+    height: 6px;
+    background: var(--bg-darker);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.trust-fill {
+    height: 100%;
+    background: linear-gradient(to right, var(--accent-red), var(--accent-orange), var(--accent-teal));
+}
+
+.diplomacy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+}
+
+.diplomacy-actions button {
+    font-size: 11px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Codex Panel */
+.codex-search {
+    margin-bottom: var(--spacing-md);
+}
+
+.codex-search input {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.codex-search input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.codex-entry {
+    background: var(--bg-panel-light);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.codex-entry:hover {
+    border-color: var(--accent-purple);
+}
+
+.codex-entry-title {
+    font-weight: bold;
+    color: var(--accent-purple);
+    font-size: 13px;
+}
+
+.codex-entry-location {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.codex-entry-preview {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Codex Detail View */
+.codex-detail {
+    padding: var(--spacing-md);
+}
+
+.codex-detail-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.codex-detail-title {
+    font-size: 18px;
+    color: var(--accent-purple);
+}
+
+.codex-detail-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: var(--spacing-xs);
+}
+
+.codex-detail-content {
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.codex-cross-reference {
+    color: var(--accent-cyan);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.codex-cross-reference:hover {
+    color: var(--accent-teal);
+}
+
+/* Empire Overview Panel */
+.empire-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.empire-stat {
+    background: var(--bg-darker);
+    padding: var(--spacing-sm);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.empire-stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.empire-stat-value {
+    font-size: 16px;
+    color: var(--accent-teal);
+}
+
+.empire-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.empire-section-title {
+    font-size: 12px;
+    color: var(--accent-cyan);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Event Modal */
+.event-modal {
+    padding: var(--spacing-lg);
+}
+
+.event-title {
+    font-size: 20px;
+    color: var(--accent-gold);
+    margin-bottom: var(--spacing-md);
+}
+
+.event-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-lg);
+}
+
+.event-choices {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* Loading Screen */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-darker);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-teal);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
