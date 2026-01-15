@@ -195,6 +195,24 @@ export class GameState {
         return 'unknown';
     }
 
+    // Check if system has any station belonging to owner
+    hasStationInSystem(systemId, owner = 'player') {
+        const system = this.getSystem(systemId);
+        if (!system || !system.stations) return false;
+        return system.stations.some(s => s.owner === owner && !s.isBuilding);
+    }
+
+    // Get systems where owner has stations (for visibility)
+    getSystemsWithStations(owner = 'player') {
+        const systems = [];
+        for (const system of this.galaxy.systems) {
+            if (system.stations?.some(s => s.owner === owner)) {
+                systems.push(system.id);
+            }
+        }
+        return systems;
+    }
+
     // Check if system is controlled by anyone
     getSystemController(systemId) {
         if (this.player.controlledSystems.includes(systemId)) return 'player';

@@ -122,8 +122,8 @@ export class FleetManager {
             }
         }
 
-        // Check for orbital shipyard
-        return system.stations?.some(s => s.type === 'shipyard' && s.owner === owner);
+        // Check for completed orbital shipyard
+        return system.stations?.some(s => s.type === 'shipyard' && s.owner === owner && !s.isBuilding);
     }
 
     setDestination(fleetId, destinationSystemId, owner = 'player') {

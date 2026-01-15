@@ -713,8 +713,12 @@ export class UIManager {
         const aiFleets = this.state.ai.fleets.filter(f => f.systemId === systemId);
         const hasPlayerShips = playerFleets.length > 0;
 
-        // Determine if planets are visible (scanned OR has player ships)
-        const canSeePlanets = visibility === 'scanned' || visibility === 'deep_scanned' || hasPlayerShips;
+        // Get stations in system
+        const playerStations = (system.stations || []).filter(s => s.owner === 'player');
+        const hasShipyard = this.game.systems.colony.systemHasShipyard(systemId, 'player');
+
+        // Determine if planets are visible (scanned OR has player ships OR has station)
+        const canSeePlanets = visibility === 'scanned' || visibility === 'deep_scanned' || hasPlayerShips || playerStations.length > 0;
 
         // Build the orbital system map HTML
         let html = `
@@ -772,6 +776,32 @@ export class UIManager {
                                 </span>
                             </div>
                         </div>
+                    ` : ''}
+                </div>
+
+                <!-- Stations Panel -->
+                <div class="system-stations-panel">
+                    <div class="stations-title">Orbital Stations</div>
+                    ${playerStations.length > 0 ? `
+                        <div class="stations-list">
+                            ${playerStations.map(s => `
+                                <div class="station-item ${s.isBuilding ? 'building' : ''}">
+                                    <span class="station-icon">${this.getStationIcon(s.type)}</span>
+                                    <span class="station-name">${s.name}</span>
+                                    ${s.isBuilding ? `<span class="station-progress">(${s.buildProgress}/${s.buildTime})</span>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<div class="no-stations">No stations</div>'}
+                    ${hasPlayerShips || playerStations.length > 0 ? `
+                        <button class="btn-secondary station-build-btn" onclick="window.game.ui.showBuildStationDialog('${systemId}')">
+                            + Build Station
+                        </button>
+                    ` : ''}
+                    ${hasShipyard && !system.stations?.some(s => s.isBuilding) ? `
+                        <button class="btn-primary station-build-btn" onclick="window.game.ui.showBuildShipDialog('${systemId}')">
+                            🚀 Build Ships
+                        </button>
                     ` : ''}
                 </div>
 
@@ -1337,6 +1367,87 @@ export class UIManager {
         const entries = this.game.systems.codex.getEntriesBySystem(systemId);
         if (entries.length > 0) {
             this.showCodexEntry(entries[0].id);
+        }
+    }
+
+    getStationIcon(type) {
+        const icons = {
+            shipyard: '🛸',
+            mining_station: '⛏️',
+            research_station: '🔭',
+            defense_platform: '🛡️'
+        };
+        return icons[type] || '🛰️';
+    }
+
+    showBuildStationDialog(systemId) {
+        const stationTypes = this.game.systems.colony.getStationTypes();
+        const system = this.state.getSystem(systemId);
+
+        let options = [];
+        for (const [key, def] of Object.entries(stationTypes)) {
+            const check = this.game.systems.colony.canBuildStation(systemId, key, 'player');
+            const costStr = `${def.cost.minerals}m, ${def.cost.energy}e`;
+            options.push(`${key}: ${def.name} (${costStr}) ${check.can ? '' : `- ${check.reason}`}`);
+        }
+
+        const choice = prompt(
+            `Build Station in ${system.name}\n\n` +
+            `Available stations:\n${options.join('\n')}\n\n` +
+            `Enter station type (shipyard, mining_station, research_station, defense_platform):`
+        );
+
+        if (choice && stationTypes[choice]) {
+            const result = this.game.systems.colony.buildStation(systemId, choice, 'player');
+            if (!result.success) {
+                alert(result.reason);
+            }
+            this.updateAll();
+            this.openSystemView(systemId);
+        }
+    }
+
+    showBuildShipDialog(systemId) {
+        const shipTypes = {
+            corvette: { name: 'Corvette', cost: { minerals: 50, energy: 10 }, desc: 'Fast attack ship' },
+            frigate: { name: 'Frigate', cost: { minerals: 100, energy: 20 }, desc: 'Balanced warship' },
+            cruiser: { name: 'Cruiser', cost: { minerals: 200, energy: 40 }, desc: 'Heavy warship' },
+            science: { name: 'Science Vessel', cost: { minerals: 80, energy: 30 }, desc: 'Exploration & scanning' }
+        };
+
+        const system = this.state.getSystem(systemId);
+        const player = this.state.player;
+
+        let options = [];
+        for (const [key, def] of Object.entries(shipTypes)) {
+            const canAfford = player.resources.minerals >= def.cost.minerals && player.resources.energy >= def.cost.energy;
+            options.push(`${key}: ${def.name} (${def.cost.minerals}m, ${def.cost.energy}e) - ${def.desc}${canAfford ? '' : ' [Cannot afford]'}`);
+        }
+
+        const choice = prompt(
+            `Build Ship at ${system.name} Shipyard\n\n` +
+            `Your resources: ${player.resources.minerals}m, ${player.resources.energy}e\n\n` +
+            `Available ships:\n${options.join('\n')}\n\n` +
+            `Enter ship type:`
+        );
+
+        if (choice && shipTypes[choice]) {
+            // Check if there's a fleet in the system, or create one
+            let fleet = player.fleets.find(f => f.systemId === systemId);
+
+            if (!fleet) {
+                // Create a new fleet for the ship
+                fleet = this.game.systems.fleet.createFleet('player', systemId, [], 'New Fleet');
+            }
+
+            const result = this.game.systems.fleet.buildShip('player', fleet.id, choice);
+            if (!result.success) {
+                alert(result.reason);
+            } else {
+                this.state.addNotification(`${shipTypes[choice].name} added to ${fleet.name}`, 'success');
+            }
+            this.updateAll();
+            this.openSystemView(systemId);
         }
     }
 }

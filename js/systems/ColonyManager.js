@@ -5,6 +5,232 @@ export class ColonyManager {
         this.state = gameState;
     }
 
+    // Station definitions (orbital structures)
+    getStationTypes() {
+        return {
+            shipyard: {
+                name: 'Shipyard',
+                icon: '🛸',
+                description: 'Enables ship construction and colonization in this system',
+                cost: { minerals: 300, energy: 150 },
+                upkeep: { energy: 5 },
+                buildTime: 5,
+                providesVision: true
+            },
+            mining_station: {
+                name: 'Mining Station',
+                icon: '⛏️',
+                description: 'Extracts minerals from asteroid belts',
+                cost: { minerals: 150, energy: 50 },
+                upkeep: { energy: 2 },
+                output: { minerals: 5 },
+                buildTime: 3,
+                requiresAsteroidBelt: true
+            },
+            research_station: {
+                name: 'Research Station',
+                icon: '🔭',
+                description: 'Conducts scientific research in orbit',
+                cost: { minerals: 200, energy: 100 },
+                upkeep: { energy: 3 },
+                output: { research: 4 },
+                buildTime: 4
+            },
+            defense_platform: {
+                name: 'Defense Platform',
+                icon: '🛡️',
+                description: 'Provides system defense',
+                cost: { minerals: 250, energy: 100 },
+                upkeep: { energy: 4 },
+                buildTime: 4,
+                defenseStrength: 30
+            }
+        };
+    }
+
+    // Check if system has a shipyard (for colonization and ship building)
+    systemHasShipyard(systemId, owner = 'player') {
+        const system = this.state.getSystem(systemId);
+        if (!system) return false;
+
+        // Check orbital shipyards
+        if (system.stations?.some(s => s.type === 'shipyard' && s.owner === owner)) {
+            return true;
+        }
+
+        // Check colony starports
+        const colonies = owner === 'player' ? this.state.player.colonies : this.state.ai.colonies;
+        for (const colony of colonies) {
+            if (colony.systemId === systemId) {
+                if (colony.buildings.some(b => b && b.type === 'starport')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Get all systems where player has shipyards (for visibility)
+    getSystemsWithShipyards(owner = 'player') {
+        const systemIds = new Set();
+
+        // Check all systems for orbital shipyards
+        for (const system of this.state.galaxy.systems) {
+            if (system.stations?.some(s => s.type === 'shipyard' && s.owner === owner)) {
+                systemIds.add(system.id);
+            }
+        }
+
+        // Check colonies with starports
+        const colonies = owner === 'player' ? this.state.player.colonies : this.state.ai.colonies;
+        for (const colony of colonies) {
+            if (colony.buildings.some(b => b && b.type === 'starport')) {
+                systemIds.add(colony.systemId);
+            }
+        }
+
+        return systemIds;
+    }
+
+    canBuildStation(systemId, stationType, owner = 'player') {
+        const system = this.state.getSystem(systemId);
+        if (!system) return { can: false, reason: 'System not found' };
+
+        const stationDef = this.getStationTypes()[stationType];
+        if (!stationDef) return { can: false, reason: 'Invalid station type' };
+
+        // Check if station type already exists in system
+        if (system.stations?.some(s => s.type === stationType && s.owner === owner)) {
+            return { can: false, reason: `${stationDef.name} already exists in this system` };
+        }
+
+        // Check for asteroid belt requirement
+        if (stationDef.requiresAsteroidBelt && !system.asteroidBelt) {
+            return { can: false, reason: 'System has no asteroid belt' };
+        }
+
+        // Need fleet or colony presence to build (except if you have a shipyard)
+        const hasPresence = this.hasPresenceInSystem(systemId, owner);
+        if (!hasPresence) {
+            return { can: false, reason: 'Need fleet or colony in system to build' };
+        }
+
+        // Check resources
+        const entity = owner === 'player' ? this.state.player : this.state.ai;
+        if (entity.resources.minerals < stationDef.cost.minerals) {
+            return { can: false, reason: 'Insufficient minerals' };
+        }
+        if (entity.resources.energy < stationDef.cost.energy) {
+            return { can: false, reason: 'Insufficient energy' };
+        }
+
+        return { can: true };
+    }
+
+    hasPresenceInSystem(systemId, owner = 'player') {
+        const entity = owner === 'player' ? this.state.player : this.state.ai;
+
+        // Check for fleet
+        if (entity.fleets?.some(f => f.systemId === systemId)) {
+            return true;
+        }
+
+        // Check for colony
+        if (entity.colonies?.some(c => c.systemId === systemId)) {
+            return true;
+        }
+
+        // Check for station
+        const system = this.state.getSystem(systemId);
+        if (system?.stations?.some(s => s.owner === owner)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    buildStation(systemId, stationType, owner = 'player') {
+        const check = this.canBuildStation(systemId, stationType, owner);
+        if (!check.can) return { success: false, reason: check.reason };
+
+        const system = this.state.getSystem(systemId);
+        const stationDef = this.getStationTypes()[stationType];
+        const entity = owner === 'player' ? this.state.player : this.state.ai;
+
+        // Deduct resources
+        entity.resources.minerals -= stationDef.cost.minerals;
+        entity.resources.energy -= stationDef.cost.energy;
+
+        // Initialize stations array if needed
+        if (!system.stations) {
+            system.stations = [];
+        }
+
+        // Add station (with build queue for turns)
+        const station = {
+            id: `station_${Date.now()}`,
+            type: stationType,
+            owner,
+            name: stationDef.name,
+            buildProgress: 0,
+            buildTime: stationDef.buildTime,
+            isBuilding: true,
+            upkeep: stationDef.upkeep?.energy || 0,
+            output: stationDef.output?.minerals || stationDef.output?.research || 0
+        };
+
+        system.stations.push(station);
+
+        // Mark system as known
+        entity.knownSystems.add(systemId);
+
+        if (owner === 'player') {
+            this.state.addNotification(`${stationDef.name} construction started in ${system.name}`, 'info');
+        }
+
+        return { success: true, station };
+    }
+
+    processStationConstruction(owner = 'player') {
+        for (const system of this.state.galaxy.systems) {
+            if (!system.stations) continue;
+
+            for (const station of system.stations) {
+                if (station.owner === owner && station.isBuilding) {
+                    station.buildProgress++;
+
+                    if (station.buildProgress >= station.buildTime) {
+                        station.isBuilding = false;
+
+                        if (owner === 'player') {
+                            this.state.addNotification(
+                                `${station.name} completed in ${system.name}!`,
+                                'success'
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    destroyStation(systemId, stationId, owner = 'player') {
+        const system = this.state.getSystem(systemId);
+        if (!system || !system.stations) return { success: false, reason: 'Station not found' };
+
+        const index = system.stations.findIndex(s => s.id === stationId && s.owner === owner);
+        if (index === -1) return { success: false, reason: 'Station not found' };
+
+        system.stations.splice(index, 1);
+
+        // Partial refund
+        const entity = owner === 'player' ? this.state.player : this.state.ai;
+        entity.resources.minerals += 75;
+
+        return { success: true };
+    }
+
     // District definitions
     getDistrictTypes() {
         return {
@@ -119,6 +345,12 @@ export class ColonyManager {
         if (!planet) return { can: false, reason: 'Planet not found' };
         if (!planet.habitable) return { can: false, reason: 'Planet is not habitable' };
         if (planet.colonized) return { can: false, reason: 'Planet already colonized' };
+
+        // Require shipyard in system (unless it's the homeworld system which starts with one)
+        const isHomeSystem = this.state.player.homeworld?.systemId === systemId;
+        if (!isHomeSystem && !this.systemHasShipyard(systemId, owner)) {
+            return { can: false, reason: 'System requires a Shipyard to colonize' };
+        }
 
         // Check resources
         const entity = owner === 'player' ? this.state.player : this.state.ai;

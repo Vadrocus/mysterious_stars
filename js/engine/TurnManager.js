@@ -98,6 +98,9 @@ export class TurnManager {
         // Process excavations
         this.processExcavations();
 
+        // Process station construction
+        this.systems.colony.processStationConstruction('player');
+
         // AI production (simplified)
         this.processAIProduction();
     }
