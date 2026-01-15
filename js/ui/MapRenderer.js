@@ -60,19 +60,23 @@ export class MapRenderer {
 
         // Mouse events
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('click', (e) => this.handleClick(e));
+        // Click is now handled via mouseup after checking for drag
         this.canvas.addEventListener('wheel', (e) => this.handleWheel(e));
 
-        // Pan with middle mouse or shift+drag
+        // Pan with left click drag
         let isPanning = false;
         let lastPanX, lastPanY;
+        let dragStartX, dragStartY;
+        let hasDragged = false;
 
         this.canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+            if (e.button === 0) {
                 isPanning = true;
+                hasDragged = false;
                 lastPanX = e.clientX;
                 lastPanY = e.clientY;
-                e.preventDefault();
+                dragStartX = e.clientX;
+                dragStartY = e.clientY;
             }
         });
 
@@ -80,6 +84,13 @@ export class MapRenderer {
             if (isPanning) {
                 const dx = e.clientX - lastPanX;
                 const dy = e.clientY - lastPanY;
+
+                // Check if we've moved enough to count as a drag
+                const totalDrag = Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY);
+                if (totalDrag > 5) {
+                    hasDragged = true;
+                }
+
                 this.camera.x -= dx / this.camera.zoom;
                 this.camera.y -= dy / this.camera.zoom;
                 lastPanX = e.clientX;
@@ -87,9 +98,17 @@ export class MapRenderer {
             }
         });
 
-        window.addEventListener('mouseup', () => {
+        window.addEventListener('mouseup', (e) => {
+            if (isPanning && !hasDragged) {
+                // This was a click, not a drag - handle it
+                this.handleClickInternal(e);
+            }
             isPanning = false;
+            hasDragged = false;
         });
+
+        // Store reference for internal click handling
+        this.hasDragged = () => hasDragged;
     }
 
     resize() {
@@ -134,36 +153,37 @@ export class MapRenderer {
         this.canvas.style.cursor = foundSystem ? 'pointer' : 'default';
     }
 
-    handleClick(e) {
-        if (e.shiftKey) return; // Ignore panning clicks
-
+    handleClickInternal(e) {
         const worldPos = this.screenToWorld(e.clientX, e.clientY);
 
-        // Check for fleet click first
-        for (const fleet of [...this.state.player.fleets, ...this.state.ai.fleets]) {
-            const system = this.state.getSystem(fleet.systemId);
-            if (system) {
-                const dist = Math.hypot(system.x - worldPos.x, system.y - worldPos.y);
-                if (dist < 30 / this.camera.zoom) {
-                    this.selectedFleet = fleet;
-                    if (this.onFleetClick) {
-                        this.onFleetClick(fleet);
-                    }
-                    return;
-                }
-            }
-        }
-
-        // Check for system click
+        // Check for system click first (prioritize opening systems)
         for (const system of this.state.galaxy.systems) {
             const dist = Math.hypot(system.x - worldPos.x, system.y - worldPos.y);
-            if (dist < 20 / this.camera.zoom) {
+            if (dist < 25 / this.camera.zoom) {
                 this.selectedSystem = system;
                 this.selectedFleet = null;
                 if (this.onSystemClick) {
                     this.onSystemClick(system);
                 }
                 return;
+            }
+        }
+
+        // Check for fleet click (only if not clicking on a system)
+        for (const fleet of [...this.state.player.fleets, ...this.state.ai.fleets]) {
+            const system = this.state.getSystem(fleet.systemId);
+            if (system) {
+                const fleetOffset = 25 / this.camera.zoom;
+                const fleetX = system.x + (fleet.owner === 'player' ? fleetOffset : -fleetOffset);
+                const fleetY = system.y - 10 / this.camera.zoom;
+                const dist = Math.hypot(fleetX - worldPos.x, fleetY - worldPos.y);
+                if (dist < 15 / this.camera.zoom) {
+                    this.selectedFleet = fleet;
+                    if (this.onFleetClick) {
+                        this.onFleetClick(fleet);
+                    }
+                    return;
+                }
             }
         }
 
