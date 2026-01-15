@@ -1194,3 +1194,61 @@
 .system-connection-item:hover {
     color: var(--accent-teal);
 }
+
+/* Unsurveyed system message */
+.system-unsurveyed-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.unsurveyed-icon {
+    font-size: 64px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.unsurveyed-text {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.unsurveyed-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Fleet movement indicator */
+.fleet-move-mode {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 212, 170, 0.2);
+    border: 1px solid var(--accent-teal);
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--accent-teal);
+    z-index: 100;
+}
+
+.fleet-move-mode button {
+    background: transparent;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    padding: 4px 8px;
+    margin-left: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.fleet-move-mode button:hover {
+    background: rgba(231, 76, 60, 0.2);
+}

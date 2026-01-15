@@ -12,6 +12,10 @@ export class UIManager {
         this.currentView = 'galaxy';
         this.currentSystemId = null;
 
+        // Fleet movement mode
+        this.fleetMoveMode = false;
+        this.movingFleet = null;
+
         this.setupEventListeners();
     }
 
@@ -560,9 +564,15 @@ export class UIManager {
 
         let buttons = [];
 
-        if (this.selectedFleet) {
+        if (this.selectedFleet && this.selectedFleet.owner === 'player') {
             const fleet = this.selectedFleet;
+            buttons.push(`<button class="btn-primary" onclick="window.game.ui.enterFleetMoveMode('${fleet.id}')">Move Fleet</button>`);
             buttons.push(`<button class="btn-secondary" onclick="window.game.ui.showFleetActions('${fleet.id}')">Fleet Actions</button>`);
+
+            if (fleet.destination) {
+                const destSystem = this.state.getSystem(fleet.destination);
+                buttons.push(`<span style="font-size: 11px; color: var(--accent-teal);">→ ${destSystem?.name || 'Unknown'}</span>`);
+            }
         }
 
         if (this.selectedSystem) {
@@ -584,6 +594,80 @@ export class UIManager {
         this.game.mapRenderer.selectedFleet = fleet;
         this.updateActionButtons();
         this.updateSidebarContent();
+    }
+
+    enterFleetMoveMode(fleetId) {
+        const fleet = this.state.getFleet(fleetId);
+        if (!fleet || fleet.owner !== 'player') return;
+
+        this.fleetMoveMode = true;
+        this.movingFleet = fleet;
+
+        // Make sure we're in galaxy view
+        if (this.currentView !== 'galaxy') {
+            this.showGalaxyMap();
+        }
+
+        // Show move mode indicator
+        this.showFleetMoveIndicator(fleet);
+
+        // Update map renderer to show move mode
+        this.game.mapRenderer.fleetMoveMode = true;
+        this.game.mapRenderer.movingFleet = fleet;
+    }
+
+    exitFleetMoveMode() {
+        this.fleetMoveMode = false;
+        this.movingFleet = null;
+
+        // Hide move mode indicator
+        this.hideFleetMoveIndicator();
+
+        // Update map renderer
+        if (this.game.mapRenderer) {
+            this.game.mapRenderer.fleetMoveMode = false;
+            this.game.mapRenderer.movingFleet = null;
+        }
+
+        this.updateAll();
+    }
+
+    showFleetMoveIndicator(fleet) {
+        // Remove existing indicator if any
+        this.hideFleetMoveIndicator();
+
+        const indicator = document.createElement('div');
+        indicator.id = 'fleet-move-indicator';
+        indicator.className = 'fleet-move-mode';
+        indicator.innerHTML = `
+            Select destination for <strong>${fleet.name}</strong>
+            <button onclick="window.game.ui.exitFleetMoveMode()">Cancel</button>
+        `;
+
+        document.getElementById('map-container').appendChild(indicator);
+    }
+
+    hideFleetMoveIndicator() {
+        const indicator = document.getElementById('fleet-move-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    handleFleetMoveDestination(systemId) {
+        if (!this.fleetMoveMode || !this.movingFleet) return;
+
+        const fleet = this.movingFleet;
+        const result = this.game.systems.fleet.setDestination(fleet.id, systemId);
+
+        if (result.success) {
+            const destSystem = this.state.getSystem(systemId);
+            this.state.addNotification(`${fleet.name} set course for ${destSystem.name}`, 'info');
+        } else {
+            this.state.addNotification(`Cannot move: ${result.reason}`, 'warning');
+        }
+
+        this.exitFleetMoveMode();
     }
 
     selectSystem(system) {
@@ -627,6 +711,10 @@ export class UIManager {
         // Get fleets in system
         const playerFleets = this.state.player.fleets.filter(f => f.systemId === systemId);
         const aiFleets = this.state.ai.fleets.filter(f => f.systemId === systemId);
+        const hasPlayerShips = playerFleets.length > 0;
+
+        // Determine if planets are visible (scanned OR has player ships)
+        const canSeePlanets = visibility === 'scanned' || visibility === 'deep_scanned' || hasPlayerShips;
 
         // Build the orbital system map HTML
         let html = `
@@ -646,7 +734,7 @@ export class UIManager {
                 </div>
 
                 <!-- Orbital Rings and Planets -->
-                ${this.renderOrbitalBodies(system, visibility)}
+                ${this.renderOrbitalBodies(system, visibility, canSeePlanets)}
 
                 <!-- Asteroid Belt if present -->
                 ${system.asteroidBelt ? `
@@ -729,7 +817,7 @@ export class UIManager {
         });
     }
 
-    renderOrbitalBodies(system, visibility) {
+    renderOrbitalBodies(system, visibility, canSeePlanets) {
         const icons = {
             continental: '🌍',
             ocean: '🌊',
@@ -745,6 +833,18 @@ export class UIManager {
         const orbitIncrement = 50; // pixels between orbits
 
         let html = '';
+
+        // If we can't see planets, just show message
+        if (!canSeePlanets) {
+            html += `
+                <div class="system-unsurveyed-message">
+                    <div class="unsurveyed-icon">?</div>
+                    <div class="unsurveyed-text">System not surveyed</div>
+                    <div class="unsurveyed-hint">Send a fleet with a science vessel to scan this system</div>
+                </div>
+            `;
+            return html;
+        }
 
         system.planets.forEach((planet, index) => {
             const orbitRadius = baseOrbitRadius + (index * orbitIncrement);
@@ -769,6 +869,9 @@ export class UIManager {
             if (isHomeworld) sphereClasses += ' homeworld';
             if (hasSite) sphereClasses += ' has-archaeology';
 
+            // Show resources only if properly scanned
+            const showResources = visibility === 'scanned' || visibility === 'deep_scanned';
+
             html += `
                 <div class="orbital-body"
                      data-planet-id="${planet.id}"
@@ -783,7 +886,7 @@ export class UIManager {
                             ${planet.habitable ? '(Habitable)' : ''}
                             ${isHomeworld ? '- HOMEWORLD' : ''}
                         </div>
-                        ${visibility === 'scanned' || visibility === 'deep_scanned' ? `
+                        ${showResources ? `
                             <div class="planet-tooltip-resources">
                                 <span>⚡${planet.resources.energy || 0}</span>
                                 <span>⛏️${planet.resources.minerals || 0}</span>

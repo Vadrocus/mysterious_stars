@@ -258,6 +258,11 @@ class MysteriousStars {
                 this.ui.selectFleet(fleet);
             }
         };
+
+        // Fleet move mode callback
+        this.mapRenderer.onFleetMoveDestination = (systemId) => {
+            this.ui.handleFleetMoveDestination(systemId);
+        };
     }
 
     initializeWithLoadedState() {

@@ -185,9 +185,18 @@ export class FleetManager {
         // Mark as scanned
         entity.scannedSystems.add(systemId);
 
+        // Reveal all connected systems (hyperlanes become visible)
+        const connectedSystems = this.state.galaxy.hyperlanes
+            .filter(h => h.from === systemId || h.to === systemId)
+            .map(h => h.from === systemId ? h.to : h.from);
+
+        for (const connectedId of connectedSystems) {
+            entity.knownSystems.add(connectedId);
+        }
+
         if (owner === 'player') {
             const system = this.state.getSystem(systemId);
-            this.state.addNotification(`System ${system.name} scanned`, 'success');
+            this.state.addNotification(`System ${system.name} scanned - ${connectedSystems.length} connected systems revealed`, 'success');
         }
 
         return { success: true };

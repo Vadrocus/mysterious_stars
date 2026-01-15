@@ -49,6 +49,11 @@ export class MapRenderer {
         this.onSystemClick = null;
         this.onSystemHover = null;
         this.onFleetClick = null;
+        this.onFleetMoveDestination = null;
+
+        // Fleet move mode
+        this.fleetMoveMode = false;
+        this.movingFleet = null;
 
         this.setupEventListeners();
         this.resize();
@@ -160,6 +165,12 @@ export class MapRenderer {
         for (const system of this.state.galaxy.systems) {
             const dist = Math.hypot(system.x - worldPos.x, system.y - worldPos.y);
             if (dist < 25 / this.camera.zoom) {
+                // If in fleet move mode, set destination instead of opening system
+                if (this.fleetMoveMode && this.onFleetMoveDestination) {
+                    this.onFleetMoveDestination(system.id);
+                    return;
+                }
+
                 this.selectedSystem = system;
                 this.selectedFleet = null;
                 if (this.onSystemClick) {
@@ -167,6 +178,11 @@ export class MapRenderer {
                 }
                 return;
             }
+        }
+
+        // If in fleet move mode and clicked empty space, exit move mode
+        if (this.fleetMoveMode) {
+            return;
         }
 
         // Check for fleet click (only if not clicking on a system)
@@ -480,9 +496,77 @@ export class MapRenderer {
     }
 
     drawSelectionIndicators() {
+        const ctx = this.ctx;
+
+        // Draw fleet move mode indicator
+        if (this.fleetMoveMode && this.movingFleet) {
+            const fleet = this.movingFleet;
+            const fleetSystem = this.state.getSystem(fleet.systemId);
+            if (fleetSystem) {
+                const fleetPos = this.worldToScreen(fleetSystem.x, fleetSystem.y);
+
+                // Highlight all reachable systems
+                for (const system of this.state.galaxy.systems) {
+                    if (this.state.player.knownSystems.has(system.id)) {
+                        const pos = this.worldToScreen(system.x, system.y);
+                        const pulseSize = 1 + Math.sin(this.pulsePhase * 3) * 0.15;
+
+                        ctx.strokeStyle = 'rgba(0, 212, 170, 0.4)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, 20 * this.camera.zoom * pulseSize, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+
+                // Draw "select destination" text
+                ctx.fillStyle = '#00d4aa';
+                ctx.font = `${12}px "Segoe UI"`;
+                ctx.textAlign = 'center';
+                ctx.fillText('Click a system to set destination', this.canvas.width / 2, 60);
+            }
+        }
+
+        // Draw paths for all fleets with destinations
+        for (const fleet of this.state.player.fleets) {
+            if (fleet.destination) {
+                const startSystem = this.state.getSystem(fleet.systemId);
+                const destSystem = this.state.getSystem(fleet.destination);
+                if (startSystem && destSystem) {
+                    const startPos = this.worldToScreen(startSystem.x, startSystem.y);
+                    const endPos = this.worldToScreen(destSystem.x, destSystem.y);
+
+                    ctx.strokeStyle = this.colors.fleetPlayer;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([8, 4]);
+                    ctx.beginPath();
+                    ctx.moveTo(startPos.x, startPos.y);
+                    ctx.lineTo(endPos.x, endPos.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Draw arrow at destination
+                    const angle = Math.atan2(endPos.y - startPos.y, endPos.x - startPos.x);
+                    const arrowSize = 10;
+                    ctx.fillStyle = this.colors.fleetPlayer;
+                    ctx.beginPath();
+                    ctx.moveTo(endPos.x, endPos.y);
+                    ctx.lineTo(
+                        endPos.x - arrowSize * Math.cos(angle - Math.PI / 6),
+                        endPos.y - arrowSize * Math.sin(angle - Math.PI / 6)
+                    );
+                    ctx.lineTo(
+                        endPos.x - arrowSize * Math.cos(angle + Math.PI / 6),
+                        endPos.y - arrowSize * Math.sin(angle + Math.PI / 6)
+                    );
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+
         if (!this.selectedSystem) return;
 
-        const ctx = this.ctx;
         const pos = this.worldToScreen(this.selectedSystem.x, this.selectedSystem.y);
         const pulseSize = 1 + Math.sin(this.pulsePhase * 2) * 0.1;
 
