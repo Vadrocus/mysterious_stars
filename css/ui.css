@@ -805,3 +805,392 @@
         transform: translateY(0);
     }
 }
+
+/* =================================
+   Stellaris-Style System Map View
+   ================================= */
+
+.system-map-container {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    background: radial-gradient(ellipse at center, #0a0e14 0%, #050810 100%);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.system-map-canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* Star at center */
+.system-star {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.system-star-glow {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: starPulse 3s ease-in-out infinite;
+}
+
+.system-star-glow.yellow {
+    background: radial-gradient(circle, rgba(241, 196, 15, 0.8) 0%, rgba(241, 196, 15, 0.3) 40%, transparent 70%);
+    box-shadow: 0 0 60px rgba(241, 196, 15, 0.6);
+}
+
+.system-star-glow.red {
+    background: radial-gradient(circle, rgba(231, 76, 60, 0.8) 0%, rgba(231, 76, 60, 0.3) 40%, transparent 70%);
+    box-shadow: 0 0 60px rgba(231, 76, 60, 0.6);
+}
+
+.system-star-glow.blue {
+    background: radial-gradient(circle, rgba(52, 152, 219, 0.8) 0%, rgba(52, 152, 219, 0.3) 40%, transparent 70%);
+    box-shadow: 0 0 60px rgba(52, 152, 219, 0.6);
+}
+
+.system-star-glow.white {
+    background: radial-gradient(circle, rgba(236, 240, 241, 0.9) 0%, rgba(236, 240, 241, 0.3) 40%, transparent 70%);
+    box-shadow: 0 0 60px rgba(236, 240, 241, 0.6);
+}
+
+.system-star-glow.orange {
+    background: radial-gradient(circle, rgba(230, 126, 34, 0.8) 0%, rgba(230, 126, 34, 0.3) 40%, transparent 70%);
+    box-shadow: 0 0 60px rgba(230, 126, 34, 0.6);
+}
+
+@keyframes starPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+.system-star-icon {
+    font-size: 36px;
+}
+
+.system-star-label {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Orbital rings */
+.orbital-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px dashed rgba(0, 212, 170, 0.15);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+/* Planets on orbits */
+.orbital-body {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    z-index: 20;
+}
+
+.orbital-body:hover {
+    transform: translate(-50%, -50%) scale(1.15);
+}
+
+.orbital-body:hover .planet-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.planet-sphere {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.planet-sphere.continental {
+    background: linear-gradient(135deg, #27ae60 0%, #2980b9 50%, #27ae60 100%);
+}
+
+.planet-sphere.ocean {
+    background: linear-gradient(135deg, #2980b9 0%, #1a5276 50%, #2980b9 100%);
+}
+
+.planet-sphere.desert {
+    background: linear-gradient(135deg, #d4ac0d 0%, #b7950b 50%, #d4ac0d 100%);
+}
+
+.planet-sphere.arctic {
+    background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 50%, #ecf0f1 100%);
+}
+
+.planet-sphere.barren {
+    background: linear-gradient(135deg, #5d6d7e 0%, #2c3e50 50%, #5d6d7e 100%);
+}
+
+.planet-sphere.gas_giant {
+    background: linear-gradient(135deg, #e67e22 0%, #d35400 30%, #f39c12 60%, #e67e22 100%);
+    width: 55px;
+    height: 55px;
+    font-size: 32px;
+}
+
+/* Colonized indicator */
+.planet-sphere.colonized::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 14px;
+    height: 14px;
+    background: var(--accent-teal);
+    border-radius: 50%;
+    border: 2px solid var(--bg-darker);
+}
+
+/* Homeworld indicator */
+.planet-sphere.homeworld::after {
+    content: '🏠';
+    font-size: 10px;
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent-gold);
+    border-radius: 50%;
+    border: 2px solid var(--bg-darker);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Archaeology site indicator */
+.planet-sphere.has-archaeology::before {
+    content: '⚗';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: var(--accent-purple);
+    text-shadow: 0 0 8px var(--accent-purple);
+    animation: archaeologyPulse 2s ease-in-out infinite;
+}
+
+@keyframes archaeologyPulse {
+    0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.7; transform: translateX(-50%) scale(1.2); }
+}
+
+/* Planet tooltip */
+.planet-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px;
+    min-width: 160px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.planet-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--border-color);
+}
+
+.planet-tooltip-name {
+    font-weight: bold;
+    color: var(--accent-cyan);
+    margin-bottom: 4px;
+}
+
+.planet-tooltip-type {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.planet-tooltip-resources {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+
+.planet-tooltip-features {
+    font-size: 10px;
+    color: var(--accent-purple);
+}
+
+/* Asteroid belt */
+.asteroid-belt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 3px dotted rgba(150, 150, 150, 0.3);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* System info panel (right side) */
+.system-info-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(13, 18, 25, 0.9);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.system-info-title {
+    font-size: 16px;
+    color: var(--accent-teal);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.system-info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.system-info-label {
+    color: var(--text-muted);
+}
+
+.system-info-value {
+    color: var(--text-primary);
+}
+
+.system-info-section {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.system-info-section-title {
+    font-size: 11px;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+/* Fleets in system */
+.system-fleets {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.system-fleet-icon {
+    background: rgba(13, 18, 25, 0.9);
+    border: 1px solid var(--accent-teal);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-primary);
+}
+
+.system-fleet-icon.enemy {
+    border-color: var(--accent-red);
+}
+
+.system-fleet-icon:hover {
+    background: rgba(0, 212, 170, 0.1);
+}
+
+/* Navigation buttons */
+.system-map-nav {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+.system-map-nav button {
+    background: rgba(13, 18, 25, 0.9);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.system-map-nav button:hover {
+    border-color: var(--accent-blue);
+    background: rgba(52, 152, 219, 0.1);
+}
+
+/* Hyperlane connections indicator */
+.system-connections {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(13, 18, 25, 0.9);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+}
+
+.system-connections-title {
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.system-connection-item {
+    color: var(--accent-cyan);
+    cursor: pointer;
+    padding: 2px 0;
+}
+
+.system-connection-item:hover {
+    color: var(--accent-teal);
+}

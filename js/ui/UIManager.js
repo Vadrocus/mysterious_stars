@@ -581,21 +581,112 @@ export class UIManager {
         const nameEl = document.getElementById('system-name');
         const content = document.getElementById('system-view-content');
 
-        nameEl.textContent = system.name;
+        // Set header with homeworld indicator
+        nameEl.textContent = system.isHomeSystem ? `${system.name} (Home System)` : system.name;
 
         const visibility = this.state.getSystemVisibility(systemId);
         const controller = this.state.getSystemController(systemId);
 
+        // Get connected systems
+        const connections = this.state.galaxy.hyperlanes
+            .filter(h => h.from === systemId || h.to === systemId)
+            .map(h => {
+                const connectedId = h.from === systemId ? h.to : h.from;
+                const connectedSystem = this.state.getSystem(connectedId);
+                return connectedSystem;
+            })
+            .filter(s => s && this.state.player.knownSystems.has(s.id));
+
+        // Get fleets in system
+        const playerFleets = this.state.player.fleets.filter(f => f.systemId === systemId);
+        const aiFleets = this.state.ai.fleets.filter(f => f.systemId === systemId);
+
+        // Build the orbital system map HTML
         let html = `
-            <div class="orbital-display">
-                <div class="star-info star-type-${system.starType}">
-                    <span class="star-icon">★</span>
-                    <div>${system.starType.charAt(0).toUpperCase() + system.starType.slice(1)} Star</div>
+            <div class="system-map-container" id="system-map-${systemId}">
+                <!-- Navigation -->
+                <div class="system-map-nav">
+                    <button onclick="window.game.ui.goToHomeworld()">🏠 Homeworld</button>
                 </div>
-                <h3 style="color: var(--accent-cyan); margin: 16px 0 8px;">Planets</h3>
-                <div class="planets-list">
-                    ${system.planets.map(planet => this.renderPlanetCard(planet, visibility)).join('')}
+
+                <!-- Central Star -->
+                <div class="system-star">
+                    <div class="system-star-glow ${system.starType}">
+                        <span class="system-star-icon">★</span>
+                    </div>
+                    <div class="system-star-label">${system.starType.charAt(0).toUpperCase() + system.starType.slice(1)} Star</div>
                 </div>
+
+                <!-- Orbital Rings and Planets -->
+                ${this.renderOrbitalBodies(system, visibility)}
+
+                <!-- Asteroid Belt if present -->
+                ${system.asteroidBelt ? `
+                    <div class="asteroid-belt" style="width: 280px; height: 280px;"></div>
+                ` : ''}
+
+                <!-- System Info Panel -->
+                <div class="system-info-panel">
+                    <div class="system-info-title">${system.name}</div>
+                    <div class="system-info-row">
+                        <span class="system-info-label">Star Type</span>
+                        <span class="system-info-value">${system.starType.charAt(0).toUpperCase() + system.starType.slice(1)}</span>
+                    </div>
+                    <div class="system-info-row">
+                        <span class="system-info-label">Planets</span>
+                        <span class="system-info-value">${system.planets.length}</span>
+                    </div>
+                    <div class="system-info-row">
+                        <span class="system-info-label">Control</span>
+                        <span class="system-info-value" style="color: ${controller === 'player' ? 'var(--accent-teal)' : controller === 'ai' ? 'var(--accent-red)' : 'var(--text-muted)'}">
+                            ${controller === 'player' ? 'Yours' : controller === 'ai' ? 'Enemy' : 'Unclaimed'}
+                        </span>
+                    </div>
+                    ${visibility === 'scanned' || visibility === 'deep_scanned' ? `
+                        <div class="system-info-section">
+                            <div class="system-info-section-title">Resources</div>
+                            <div class="system-info-row">
+                                <span class="system-info-label">Habitable</span>
+                                <span class="system-info-value">${system.planets.filter(p => p.habitable).length}</span>
+                            </div>
+                            <div class="system-info-row">
+                                <span class="system-info-label">Archaeology</span>
+                                <span class="system-info-value" style="color: var(--accent-purple)">
+                                    ${system.planets.filter(p => p.archaeologySite?.discovered).length} site(s)
+                                </span>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Fleets in System -->
+                ${playerFleets.length > 0 || aiFleets.length > 0 ? `
+                    <div class="system-fleets">
+                        ${playerFleets.map(f => `
+                            <div class="system-fleet-icon" onclick="window.game.ui.selectFleet(window.game.state.getFleet('${f.id}'))">
+                                <span>🚀</span>
+                                <span>${f.name} (${f.ships.length})</span>
+                            </div>
+                        `).join('')}
+                        ${aiFleets.map(f => `
+                            <div class="system-fleet-icon enemy">
+                                <span>🚀</span>
+                                <span>Enemy Fleet (${f.ships.length})</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                <!-- Connected Systems -->
+                ${connections.length > 0 ? `
+                    <div class="system-connections">
+                        <div class="system-connections-title">Hyperlane Connections</div>
+                        ${connections.map(s => `
+                            <div class="system-connection-item" onclick="window.game.ui.openSystemView('${s.id}')"
+                                >→ ${s.name}</div>
+                        `).join('')}
+                    </div>
+                ` : ''}
             </div>
         `;
 
@@ -603,15 +694,15 @@ export class UIManager {
         view.classList.remove('hidden');
 
         // Setup planet click handlers
-        document.querySelectorAll('.planet-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const planetId = card.dataset.planetId;
+        document.querySelectorAll('.orbital-body').forEach(body => {
+            body.addEventListener('click', () => {
+                const planetId = body.dataset.planetId;
                 this.showPlanetDetails(systemId, planetId);
             });
         });
     }
 
-    renderPlanetCard(planet, visibility) {
+    renderOrbitalBodies(system, visibility) {
         const icons = {
             continental: '🌍',
             ocean: '🌊',
@@ -621,31 +712,81 @@ export class UIManager {
             gas_giant: '🪐'
         };
 
-        const hasColony = planet.colonized;
-        const hasSite = planet.archaeologySite?.discovered;
+        const centerX = 50; // percentage
+        const centerY = 50;
+        const baseOrbitRadius = 80; // pixels from center for first planet
+        const orbitIncrement = 50; // pixels between orbits
 
-        return `
-            <div class="planet-card ${hasColony ? 'colonized' : ''} ${hasSite ? 'has-site' : ''}"
-                 data-planet-id="${planet.id}">
-                <div class="planet-header">
-                    <span class="planet-name">${planet.name}</span>
-                    <span class="planet-type">${planet.type}</span>
-                </div>
-                <div class="planet-icon">${icons[planet.type] || '🌑'}</div>
-                ${visibility !== 'unknown' && visibility !== 'visited' ? `
-                    <div class="planet-resources">
-                        <span>⚡${planet.resources.energy || 0}</span>
-                        <span>⛏️${planet.resources.minerals || 0}</span>
-                        <span>🔬${planet.resources.research || 0}</span>
+        let html = '';
+
+        system.planets.forEach((planet, index) => {
+            const orbitRadius = baseOrbitRadius + (index * orbitIncrement);
+
+            // Add orbital ring
+            html += `
+                <div class="orbital-ring" style="width: ${orbitRadius * 2}px; height: ${orbitRadius * 2}px;"></div>
+            `;
+
+            // Position planet on orbit (distribute evenly with some randomness)
+            const angle = (index * (360 / system.planets.length) + (index * 37)) * (Math.PI / 180);
+            const planetX = centerX + (orbitRadius / 5) * Math.cos(angle);
+            const planetY = centerY + (orbitRadius / 5) * Math.sin(angle);
+
+            const isColonized = planet.colonized && planet.owner === 'player';
+            const isHomeworld = planet.isHomeworld;
+            const hasSite = planet.archaeologySite?.discovered && !planet.archaeologySite?.completed;
+
+            // Build planet classes
+            let sphereClasses = `planet-sphere ${planet.type}`;
+            if (isColonized) sphereClasses += ' colonized';
+            if (isHomeworld) sphereClasses += ' homeworld';
+            if (hasSite) sphereClasses += ' has-archaeology';
+
+            html += `
+                <div class="orbital-body"
+                     data-planet-id="${planet.id}"
+                     style="left: ${planetX}%; top: ${planetY}%;">
+                    <div class="${sphereClasses}">
+                        ${icons[planet.type] || '🌑'}
                     </div>
-                ` : ''}
-                <div class="planet-features">
-                    ${hasColony ? '<span style="color: var(--accent-teal);">Colonized</span> ' : ''}
-                    ${hasSite ? '<span class="archaeology-indicator">⚗ Archaeology Site</span>' : ''}
-                    ${planet.habitable && !hasColony ? '<span style="color: var(--text-secondary);">Habitable</span>' : ''}
+                    <div class="planet-tooltip">
+                        <div class="planet-tooltip-name">${planet.name}</div>
+                        <div class="planet-tooltip-type">
+                            ${planet.type.replace('_', ' ')}
+                            ${planet.habitable ? '(Habitable)' : ''}
+                            ${isHomeworld ? '- HOMEWORLD' : ''}
+                        </div>
+                        ${visibility === 'scanned' || visibility === 'deep_scanned' ? `
+                            <div class="planet-tooltip-resources">
+                                <span>⚡${planet.resources.energy || 0}</span>
+                                <span>⛏️${planet.resources.minerals || 0}</span>
+                                <span>🔬${planet.resources.research || 0}</span>
+                            </div>
+                        ` : ''}
+                        <div class="planet-tooltip-features">
+                            ${isColonized ? '🏙️ Colonized' : ''}
+                            ${hasSite ? '⚗ Archaeology Site' : ''}
+                            ${planet.moon ? '🌙 Has Moon' : ''}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        });
+
+        return html;
+    }
+
+    goToHomeworld() {
+        const homeworld = this.state.player.homeworld;
+        if (homeworld) {
+            this.openSystemView(homeworld.systemId);
+            this.game.mapRenderer.centerOnSystem(homeworld.systemId);
+        } else {
+            // Fallback to first controlled system
+            if (this.state.player.controlledSystems.length > 0) {
+                this.openSystemView(this.state.player.controlledSystems[0]);
+            }
+        }
     }
 
     showPlanetDetails(systemId, planetId) {

@@ -37,6 +37,7 @@ export class GameState {
             knownSystems: new Set(), // System IDs the player has visited
             scannedSystems: new Set(), // System IDs fully scanned
             deepScannedSystems: new Set(), // System IDs deep scanned
+            homeworld: null, // { systemId, planetId }
             codex: [], // Discovered lore entries
             notifications: [],
             warExhaustion: 0,
@@ -60,6 +61,8 @@ export class GameState {
             colonies: [],
             controlledSystems: [],
             knownSystems: new Set(),
+            scannedSystems: new Set(),
+            deepScannedSystems: new Set(),
             trust: 50, // 0-100
             stance: 'neutral', // friendly, neutral, suspicious, hostile, war
             beliefs: {}, // What AI believes about player
@@ -114,7 +117,9 @@ export class GameState {
             },
             ai: {
                 ...this.ai,
-                knownSystems: Array.from(this.ai.knownSystems)
+                knownSystems: Array.from(this.ai.knownSystems),
+                scannedSystems: Array.from(this.ai.scannedSystems),
+                deepScannedSystems: Array.from(this.ai.deepScannedSystems)
             },
             galaxy: this.galaxy,
             excavations: this.excavations,
@@ -142,7 +147,9 @@ export class GameState {
 
         this.ai = {
             ...parsed.ai,
-            knownSystems: new Set(parsed.ai.knownSystems)
+            knownSystems: new Set(parsed.ai.knownSystems),
+            scannedSystems: new Set(parsed.ai.scannedSystems || []),
+            deepScannedSystems: new Set(parsed.ai.deepScannedSystems || [])
         };
 
         this.galaxy = parsed.galaxy;

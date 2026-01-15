@@ -117,41 +117,63 @@ class MysteriousStars {
     initializePlayer(startSystemId) {
         const system = this.state.getSystem(startSystemId);
 
-        // Mark starting system as known and scanned
+        // Mark starting system as known, scanned, and deep scanned (homeworld)
         this.state.player.knownSystems.add(startSystemId);
         this.state.player.scannedSystems.add(startSystemId);
+        this.state.player.deepScannedSystems.add(startSystemId);
         this.state.player.controlledSystems.push(startSystemId);
 
-        // Find habitable planet and colonize
-        const habitablePlanet = system.planets.find(p => p.habitable);
+        // Find best habitable planet for homeworld
+        const habitablePlanets = system.planets.filter(p => p.habitable);
+        const habitablePlanet = habitablePlanets.sort((a, b) => b.size - a.size)[0];
+
         if (habitablePlanet) {
-            // Direct colony creation (bypass cost for starting colony)
+            // Set up homeworld
             habitablePlanet.colonized = true;
             habitablePlanet.owner = 'player';
+            habitablePlanet.isHomeworld = true;
+            habitablePlanet.name = 'Terra Nova'; // Rename homeworld
 
+            // Store homeworld reference
+            this.state.player.homeworld = {
+                systemId: startSystemId,
+                planetId: habitablePlanet.id
+            };
+
+            // Create homeworld colony with robust starting economy
             const colony = {
-                id: `colony_start`,
+                id: `colony_homeworld`,
                 planetId: habitablePlanet.id,
                 systemId: startSystemId,
-                name: habitablePlanet.name,
-                population: 2,
-                happiness: 0.8,
+                name: 'Terra Nova',
+                isHomeworld: true,
+                population: 5,
+                happiness: 0.85,
                 districts: [
                     { type: 'city', id: 'dist_1' },
-                    { type: 'mining', id: 'dist_2' },
-                    { type: 'generator', id: 'dist_3' }
+                    { type: 'city', id: 'dist_2' },
+                    { type: 'mining', id: 'dist_3' },
+                    { type: 'mining', id: 'dist_4' },
+                    { type: 'generator', id: 'dist_5' },
+                    { type: 'generator', id: 'dist_6' },
+                    { type: 'research', id: 'dist_7' }
                 ],
                 buildings: [
                     { type: 'starport', id: 'bld_1' },
-                    null,
+                    { type: 'power_plant', id: 'bld_2' },
+                    { type: 'research_lab', id: 'bld_3' },
                     null
                 ],
-                maxDistricts: Math.floor(habitablePlanet.size / 4),
+                maxDistricts: Math.max(10, Math.floor(habitablePlanet.size / 3)),
                 buildQueue: []
             };
 
             this.state.player.colonies.push(colony);
         }
+
+        // Rename starting system
+        system.name = 'Sol';
+        system.isHomeSystem = true;
 
         // Create starting fleet
         this.systems.fleet.createFleet('player', startSystemId, [
@@ -161,9 +183,9 @@ class MysteriousStars {
         ], 'Home Fleet');
 
         // Give starting resources
-        this.state.player.resources.energy = 200;
-        this.state.player.resources.minerals = 200;
-        this.state.player.resources.research = 50;
+        this.state.player.resources.energy = 300;
+        this.state.player.resources.minerals = 300;
+        this.state.player.resources.research = 100;
     }
 
     initializeAI(startSystemId) {
