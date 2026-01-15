@@ -8,6 +8,10 @@ export class UIManager {
         this.selectedSystem = null;
         this.selectedFleet = null;
 
+        // View state: 'galaxy' or 'system'
+        this.currentView = 'galaxy';
+        this.currentSystemId = null;
+
         this.setupEventListeners();
     }
 
@@ -56,6 +60,21 @@ export class UIManager {
 
         document.getElementById('zoom-out')?.addEventListener('click', () => {
             this.game.mapRenderer.zoomOut();
+        });
+
+        // Map toggle button
+        document.getElementById('toggle-map-view')?.addEventListener('click', () => {
+            this.toggleMapView();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger if typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            if (e.key === 'm' || e.key === 'M') {
+                this.toggleHomeSystemMap();
+            }
         });
 
         // Main menu buttons
@@ -577,12 +596,20 @@ export class UIManager {
         const system = this.state.getSystem(systemId);
         if (!system) return;
 
-        const view = document.getElementById('system-view');
-        const nameEl = document.getElementById('system-name');
-        const content = document.getElementById('system-view-content');
+        // Update view state
+        this.currentView = 'system';
+        this.currentSystemId = systemId;
 
-        // Set header with homeworld indicator
-        nameEl.textContent = system.isHomeSystem ? `${system.name} (Home System)` : system.name;
+        const canvas = document.getElementById('game-canvas');
+        const systemMapView = document.getElementById('system-map-view');
+        const toggleBtn = document.getElementById('toggle-map-view');
+
+        // Hide galaxy canvas, show system map
+        canvas.classList.add('hidden');
+        systemMapView.classList.remove('hidden');
+        toggleBtn.classList.remove('hidden');
+        toggleBtn.textContent = '🌌';
+        toggleBtn.title = 'Return to Galaxy Map (M)';
 
         const visibility = this.state.getSystemVisibility(systemId);
         const controller = this.state.getSystemController(systemId);
@@ -606,6 +633,7 @@ export class UIManager {
             <div class="system-map-container" id="system-map-${systemId}">
                 <!-- Navigation -->
                 <div class="system-map-nav">
+                    <button onclick="window.game.ui.showGalaxyMap()" title="Press M to toggle">🌌 Galaxy Map (M)</button>
                     <button onclick="window.game.ui.goToHomeworld()">🏠 Homeworld</button>
                 </div>
 
@@ -627,7 +655,7 @@ export class UIManager {
 
                 <!-- System Info Panel -->
                 <div class="system-info-panel">
-                    <div class="system-info-title">${system.name}</div>
+                    <div class="system-info-title">${system.name}${system.isHomeSystem ? ' (Home)' : ''}</div>
                     <div class="system-info-row">
                         <span class="system-info-label">Star Type</span>
                         <span class="system-info-value">${system.starType.charAt(0).toUpperCase() + system.starType.slice(1)}</span>
@@ -690,8 +718,7 @@ export class UIManager {
             </div>
         `;
 
-        content.innerHTML = html;
-        view.classList.remove('hidden');
+        systemMapView.innerHTML = html;
 
         // Setup planet click handlers
         document.querySelectorAll('.orbital-body').forEach(body => {
@@ -786,6 +813,54 @@ export class UIManager {
             if (this.state.player.controlledSystems.length > 0) {
                 this.openSystemView(this.state.player.controlledSystems[0]);
             }
+        }
+    }
+
+    showGalaxyMap() {
+        this.currentView = 'galaxy';
+        this.currentSystemId = null;
+
+        const canvas = document.getElementById('game-canvas');
+        const systemMapView = document.getElementById('system-map-view');
+        const toggleBtn = document.getElementById('toggle-map-view');
+
+        // Show galaxy canvas, hide system map
+        canvas.classList.remove('hidden');
+        systemMapView.classList.add('hidden');
+        systemMapView.innerHTML = '';
+        toggleBtn.classList.add('hidden');
+
+        // Re-render galaxy map
+        if (this.game.mapRenderer) {
+            this.game.mapRenderer.render();
+        }
+    }
+
+    toggleMapView() {
+        if (this.currentView === 'galaxy') {
+            // If in galaxy view, go to home system (or last viewed system)
+            const targetSystem = this.currentSystemId || this.state.player.homeworld?.systemId || this.state.player.controlledSystems[0];
+            if (targetSystem) {
+                this.openSystemView(targetSystem);
+            }
+        } else {
+            // If in system view, return to galaxy
+            this.showGalaxyMap();
+        }
+    }
+
+    toggleHomeSystemMap() {
+        const homeSystemId = this.state.player.homeworld?.systemId || this.state.player.controlledSystems[0];
+
+        if (this.currentView === 'galaxy') {
+            // From galaxy, go to home system
+            if (homeSystemId) {
+                this.openSystemView(homeSystemId);
+                this.game.mapRenderer.centerOnSystem(homeSystemId);
+            }
+        } else {
+            // From any system view, return to galaxy
+            this.showGalaxyMap();
         }
     }
 
@@ -1023,7 +1098,7 @@ export class UIManager {
     }
 
     closeSystemView() {
-        document.getElementById('system-view')?.classList.add('hidden');
+        this.showGalaxyMap();
     }
 
     closeColonyView() {
